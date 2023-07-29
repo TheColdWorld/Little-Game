@@ -14,47 +14,51 @@ internal class Start
         try
         {
             Debug.StartWriteFile();
-        FromFileLoadConfig();
-        foreach (string arg in args)
-        {
-            string[] tmp = arg.Split('=', System.StringSplitOptions.RemoveEmptyEntries);
-            if (tmp.Length > 2) throw new FatalException("Argument format wrong", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
-            if (tmp.Length == 2)
+            FromFileLoadConfig();
+            foreach (string arg in args)
             {
-                switch (tmp[0].ToLower())
+                string[] tmp = arg.Split('=', System.StringSplitOptions.RemoveEmptyEntries);
+                if (tmp.Length > 2) throw new FatalException("Argument format wrong", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
+                if (tmp.Length == 2)
                 {
-                    default:
-                        throw new FatalException("\'" + tmp[0] + "\' setting not found", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
-                    case "lang":
-                        Settings.lang = Language.GetLangsName().Contains(tmp[1])
-                            ? new Language(tmp[1])
-                            : throw new FatalException("Invaid Language",typeof(Start),System.Threading.Thread.CurrentThread.Name!);
-                        break;
-                    case "mainwindowwidth":
-                        Settings.mainwidth = System.Convert.ToDouble(tmp[1]);
-                        break;
-                    case "mainwindowheight":
-                        Settings.mainheight = System.Convert.ToDouble(tmp[1]);
-                        break;
-                    case "loginwindowheight":
-                        Settings.loginheight = System.Convert.ToDouble(tmp[1]);
-                        break;
-                    case "loginwindowwidth":
-                        Settings.loginwidth = System.Convert.ToDouble(tmp[1]);
-                        break;
+                    switch (tmp[0].ToLower())
+                    {
+                        default:
+                            throw new FatalException("\'" + tmp[0] + "\' setting not found", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
+                        case "lang":
+                            Settings.lang = Language.GetLangsName().Contains(tmp[1])
+                                ? new Language(tmp[1])
+                                : throw new FatalException("Invaid Language", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
+                            break;
+                        case "mainwindowwidth":
+                            Settings.mainwidth = System.Convert.ToDouble(tmp[1]);
+                            break;
+                        case "mainwindowheight":
+                            Settings.mainheight = System.Convert.ToDouble(tmp[1]);
+                            break;
+                        case "loginwindowheight":
+                            Settings.loginheight = System.Convert.ToDouble(tmp[1]);
+                            break;
+                        case "loginwindowwidth":
+                            Settings.loginwidth = System.Convert.ToDouble(tmp[1]);
+                            break;
+                    }
+                }
+                if (tmp.Length == 1)
+                {
+                    Debug.Enable = tmp[0].ToLower() == "debug"
+                        ? true
+                        : throw new FatalException("\'" + tmp[0] + "\' argument not found", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
                 }
             }
-            if(tmp.Length ==1)
-            {
-                Debug.Enable = tmp[0].ToLower() == "debug"
-                    ? true
-                    : throw new FatalException("\'" + tmp[0] + "\' argument not found", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
-            }
-        }
-        Settings.lang = new(Settings.langName);
-        System.GC.Collect();
-        
+            Settings.lang = new(Settings.langName);
+            System.GC.Collect();
+
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(System.Array.Empty<System.String>());
+        }
+        catch (System.StackOverflowException st)
+        {
+            Debug.Log("a " + st.GetType().ToString() + " occored:" + st.Message, Debug.LogLevel.FatalError, typeof(Start), System.Threading.Thread.CurrentThread.Name!);
         }
         catch (System.Exception e)
         {

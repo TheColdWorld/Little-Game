@@ -14,8 +14,8 @@ public class Language
         _Name=format.Name; Debug.Log("Current Language Name=" + format.Name, Debug.LogLevel.Debug, typeof(Language), System.Threading.Thread.CurrentThread.Name!);
         _Version = format.Version; Debug.Log("Current Language Version=" + format.Version, Debug.LogLevel.Debug, typeof(Language), System.Threading.Thread.CurrentThread.Name!);
         _Auther = format.Author; Debug.Log("Current Language Author=" + format.Author, Debug.LogLevel.Debug, typeof(Language), System.Threading.Thread.CurrentThread.Name!);
-        _MainWindow = new(format.mainwindow); Debug.Log("Current Language mainwindow =>" + format.mainwindow.ToString(), Debug.LogLevel.Debug, typeof(Language), System.Threading.Thread.CurrentThread.Name!);
-        _LoginWindow = new(format.loginwindow); Debug.Log("Current Language loginwindow =>" + format.loginwindow.ToString(), Debug.LogLevel.Debug, typeof(Language), System.Threading.Thread.CurrentThread.Name!);
+        _MainWindow = new(format.mainwindow); 
+        _LoginWindow = new(format.loginwindow); 
     }
     private string _Name;
     private string _Auther;
@@ -44,7 +44,14 @@ public class Language
             _PassWord=loginWindow.PassWord;
             _Button=loginWindow.Button;
             _Port = loginWindow.Port;
-        }
+            _EmptyPassWordError = loginWindow.EmptyPassWordError;
+            _EmptyAccoutError = loginWindow.EmptyAccoutError;
+            _PortOutOfRangeWarm = loginWindow.PortOutOfRangeWarm;
+            _PortLower1024Warm = loginWindow.PortLower1024Warm;
+            _PortEmptyError = loginWindow.PortEmptyError;
+            _IPWrongError = loginWindow.IPWrongError;
+            _ProtInvaidError = loginWindow.ProtInvaidError;
+    }
         public string Title => _Title.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
         private string _Title;
         private string _IP;
@@ -52,6 +59,22 @@ public class Language
         private string _PassWord;
         private string _Button;
         private string _Port;
+        private string _EmptyPassWordError;
+        private string _EmptyAccoutError;
+        private string _PortOutOfRangeWarm;
+        private string _PortLower1024Warm;
+        private string _PortEmptyError;
+        private string _IPWrongError;
+        private string _ProtInvaidError;
+        private string _HostDoNotHaveIpError;
+        public string HostDoNotHaveIpError => _HostDoNotHaveIpError.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
+        public string ProtInvaidError => _ProtInvaidError.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
+        public string IPWrongError => _IPWrongError.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
+        public string PortEmptyError => _PortEmptyError.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
+        public string PortLower1024Warm => _PortLower1024Warm.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
+        public string PortOutOfRangeWarm => _PortOutOfRangeWarm.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
+        public string EmptyAccoutError => _EmptyAccoutError.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
+        public string EmptyPassWordError => _EmptyPassWordError.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
         public string Port => _Port.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
         public string Button => _Button.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
         public string IP => _IP.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
@@ -90,6 +113,14 @@ public class LanguageJsonFormat
         public string PassWord { get; set; }    
         public string Button { get;set; }
         public string Port { get; set; }    
+        public string IPWrongError { get; set; }    
+        public string ProtInvaidError { get;set; }
+        public string PortEmptyError { get; set; }
+        public string PortLower1024Warm { get; set; }
+        public string PortOutOfRangeWarm { get ; set; }
+        public string EmptyAccoutError { get; set; }
+        public string EmptyPassWordError { get ; set; }
+        public string HostDoNotHaveIpError { get; set; }    
         public override string ToString() => "_title=" + Title;
     }
 }

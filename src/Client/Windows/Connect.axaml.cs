@@ -1,5 +1,8 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Notifications;
 using Avalonia.Interactivity;
+
+using System.Linq;
 
 namespace Client.Windows;
 public partial class Connect : Window
@@ -11,9 +14,9 @@ public partial class Connect : Window
         Height = Settings.loginheight;
         Width = Settings.loginwidth;
         Title = Settings.lang.mainWindow.Title;
-        WindowOpened();
+        Opened += (s,e) => WindowOpened();
     }
-    public void WindowOpened()
+    private void WindowOpened()
     {
         ref Language Lang = ref Settings.lang;
         Ip = new() { MaxWidth = Width, MaxHeight = Height / 5 };
@@ -41,6 +44,7 @@ public partial class Connect : Window
         MainStackPanel.Children.Add(Acc);
         MainStackPanel.Children.Add(Passwd);
         button = new() { MaxWidth = Width, MaxHeight = Height / 4, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,Content=Lang.loginWindow.Button,Name="login"};
+        button.Click += Login;
         MainStackPanel.Children.Add(button);
         SizeChanged += (o, e) =>
         {
@@ -52,6 +56,7 @@ public partial class Connect : Window
             Passwd.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left;
             button.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right;
         };
+        _Errmanager = new(this) { MaxItems = 4,Margin=new(1,0)};
     }
     public static Connect Instace
     {
@@ -61,10 +66,109 @@ public partial class Connect : Window
             return _Instace;
         }
     }
-    private void Login(object sender, RoutedEventArgs e)
+    private void Login(object? sender, RoutedEventArgs e)
     {
-        
+        ref Language lang = ref Settings.lang;
+        if (string.IsNullOrWhiteSpace(_IPtextBox.Text))
+        {
+
+            ShowNotification("Error",lang.loginWindow.IPWrongError,NotificationType.Error);
+            Debug.Log(lang.loginWindow.IPWrongError,Debug.LogLevel.Error,this.GetType(),System.Threading.Thread.CurrentThread.Name!);
+            return;
+        }
+        if (string.IsNullOrEmpty(_PortBox.Text))
+        {
+            ShowNotification("Error", lang.loginWindow.PortEmptyError, NotificationType.Error);
+            Debug.Log(lang.loginWindow.PortEmptyError, Debug.LogLevel.Error, this.GetType(), System.Threading.Thread.CurrentThread.Name!);
+            return;
+        }
+        if (_IPtextBox.Text == "0.0.0.0" || _IPtextBox.Text == "::")
+        {
+            ShowNotification("Error", lang.loginWindow.IPWrongError, NotificationType.Error);
+            Debug.Log(lang.loginWindow.IPWrongError, Debug.LogLevel.Error, this.GetType(), System.Threading.Thread.CurrentThread.Name!);
+            return;
+        }
+        if (!int.TryParse(_PortBox.Text, out int Port))
+        {
+            ShowNotification("Error", lang.loginWindow.ProtInvaidError, NotificationType.Error);
+            Debug.Log(lang.loginWindow.ProtInvaidError, Debug.LogLevel.Error, this.GetType(), System.Threading.Thread.CurrentThread.Name!);
+            return;
+        }
+        if (Port is > 65535 or <= 0)
+        {
+            ShowNotification("Error", lang.loginWindow.PortOutOfRangeWarm, NotificationType.Error);
+            Debug.Log(lang.loginWindow.PortOutOfRangeWarm, Debug.LogLevel.Error, this.GetType(), System.Threading.Thread.CurrentThread.Name!);
+            return;
+        }
+        if (Port <= 1024)
+        {
+            ShowNotification("Warm", lang.loginWindow.PortLower1024Warm, NotificationType.Warning);
+            Debug.Log(lang.loginWindow.PortLower1024Warm, Debug.LogLevel.Warm, this.GetType(), System.Threading.Thread.CurrentThread.Name!);
+        }
+        if (string.IsNullOrEmpty(_AcctextBox.Text))
+        {
+            ShowNotification("Error", lang.loginWindow.EmptyAccoutError, NotificationType.Error);
+            Debug.Log(lang.loginWindow.EmptyAccoutError, Debug.LogLevel.Error, this.GetType(), System.Threading.Thread.CurrentThread.Name!);
+            return;
+        }
+        if (string.IsNullOrEmpty(_PasswdtextBox.Text))
+        {
+            ShowNotification("Warm", lang.loginWindow.EmptyPassWordError, NotificationType.Warning);
+            Debug.Log(lang.loginWindow.EmptyPassWordError, Debug.LogLevel.Warm, this.GetType(), System.Threading.Thread.CurrentThread.Name!);
+        }
+        ShowNotification(null, "Start Login", NotificationType.Information);
+        Debug.Log("Start Login...",Debug.LogLevel.Info, this.GetType(),System.Threading.Thread.CurrentThread.Name!);
+        string CurrentIpaddressstr = _IPtextBox.Text.ToLower() == "localhost" ? "::1" : _IPtextBox.Text;
+        System.UriHostNameType IpType= System.Uri.CheckHostName(CurrentIpaddressstr);
+        System.Net.IPAddress ip; 
+        try
+        {
+            switch (IpType)
+            {
+                case System.UriHostNameType.Dns:
+                    ip = GetHostAddresses(CurrentIpaddressstr);
+                    break;
+                case System.UriHostNameType.IPv4:
+                    ip = System.Net.IPAddress.Parse(CurrentIpaddressstr);
+                    break;
+                case System.UriHostNameType.IPv6:
+                    ip = System.Net.IPAddress.Parse(CurrentIpaddressstr);
+                    break;
+                default:
+                    ShowNotification("Error", lang.loginWindow.IPWrongError, NotificationType.Error);
+                    Debug.Log(lang.loginWindow.IPWrongError, Debug.LogLevel.Error, this.GetType(), System.Threading.Thread.CurrentThread.Name!);
+                    return;
+            }
+        }
+        catch (System.Net.Sockets.SocketException sockete)
+        {
+            ShowNotification("Error", sockete.GetType().ToString() + ":\n" + sockete.Message, NotificationType.Error);
+            Debug.Log("a " + sockete.GetType().ToString() + " occored :" + sockete.Message, Debug.LogLevel.Error, this.GetType(), System.Threading.Thread.CurrentThread.Name!);
+            return;
+        }
+        catch (Client.Exception)
+        {
+            ShowNotification("Error", lang.loginWindow.HostDoNotHaveIpError, NotificationType.Error);
+            Debug.Log(lang.loginWindow.HostDoNotHaveIpError, Debug.LogLevel.Error, this.GetType(), System.Threading.Thread.CurrentThread.Name!);
+            return;
+        }
+        Debug.Log("Start Login to \'" + ip.ToString() + "\'", Debug.LogLevel.Info, this.GetType(), System.Threading.Thread.CurrentThread.Name!);
     }
+    private System.Net.IPAddress GetHostAddresses(string? host)
+    {
+        System.Net.IPAddress[] ips = System.Net.Dns.GetHostAddresses(host!);
+        if (ips.Length == 0) throw new Client.Exception(Settings.lang.loginWindow.IPWrongError, this.GetType(), System.Threading.Thread.CurrentThread.Name!);
+        System.Collections.Generic.List<System.Net.IPAddress> ipv6s = ips.Where(e=> e.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6).ToList(); System.Collections.Generic.List<System.Net.IPAddress>? ipv4s = null;
+        if (ipv6s.Count == 0) ipv4s = ips.Where(e => e.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToList();
+        else return ipv6s[0];
+        return ipv4s is null
+            ? throw new Client.Exception(Settings.lang.loginWindow.IPWrongError, this.GetType(), System.Threading.Thread.CurrentThread.Name!)
+            : ipv4s?.Count == 0
+            ? throw new Client.Exception(Settings.lang.loginWindow.IPWrongError, this.GetType(), System.Threading.Thread.CurrentThread.Name!)
+            : ipv4s[0];
+    }
+    private void ShowNotification(string? Title, string? Message, NotificationType notificationType) => _Errmanager?.Show(new Notification(Title, Message, notificationType));
+    private WindowNotificationManager _Errmanager;
     private static Connect _Instace = null;
     private TextBox _IPtextBox;
     private TextBox _AcctextBox;
