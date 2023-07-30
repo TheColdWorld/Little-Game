@@ -10,7 +10,7 @@ public static class Debug
     {
         LogFilePath = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "logs", System.DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + ".log");
         if (!System.IO.Path.Exists(System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "logs"))) System.IO.Directory.CreateDirectory(System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "logs"));
-        System.IO.File.Create(LogFilePath);
+        System.IO.File.Create(LogFilePath).Dispose();
         WriteTimer = new(new System.TimeSpan(0, 0, 30)) { Enabled = true };
         WriteTimer.Elapsed += (obj, e) => LogWrite();
         WriteTimer.Start();
@@ -50,8 +50,7 @@ public static class Debug
             };
             _Log.AddLast(Context);
             _WriteFilequeue.AddLast(Context);
-            System.Diagnostics.Debug.WriteLine(Context);
-            if (level == LogLevel.Debug) { if (Enable) System.Console.WriteLine(Context); }
+            if (level == LogLevel.Debug) { if (Enable) System.Console.WriteLine(Context); System.Diagnostics.Debug.WriteLine(Context); return; }
             else System.Console.WriteLine(Context);
         });
     }

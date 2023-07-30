@@ -17,9 +17,9 @@ public class Language
         _MainWindow = new(format.mainwindow); 
         _LoginWindow = new(format.loginwindow); 
     }
-    private string _Name;
-    private string _Auther;
-    private string _Version;
+    private readonly string _Name;
+    private readonly string _Auther;
+    private readonly string _Version;
     private MainWindow _MainWindow;
     private LoginWindow _LoginWindow;
     public MainWindow mainWindow => _MainWindow;
@@ -31,7 +31,7 @@ public class Language
     {
         public MainWindow(LanguageJsonFormat.MainWindow mainWindow) => _Title= mainWindow.Title;
         public string Title => _Title.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
-        private string _Title;
+        private readonly string _Title;
         public override string ToString() => "_title=" + _Title;
     }
     public class LoginWindow
@@ -53,20 +53,20 @@ public class Language
             _ProtInvaidError = loginWindow.ProtInvaidError;
     }
         public string Title => _Title.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
-        private string _Title;
-        private string _IP;
-        private string _Accout;
-        private string _PassWord;
-        private string _Button;
-        private string _Port;
-        private string _EmptyPassWordError;
-        private string _EmptyAccoutError;
-        private string _PortOutOfRangeWarm;
-        private string _PortLower1024Warm;
-        private string _PortEmptyError;
-        private string _IPWrongError;
-        private string _ProtInvaidError;
-        private string _HostDoNotHaveIpError;
+        private readonly string _Title;
+        private readonly string _IP;
+        private readonly string _Accout;
+        private readonly string _PassWord;
+        private readonly string _Button;
+        private readonly string _Port;
+        private readonly string _EmptyPassWordError;
+        private readonly string _EmptyAccoutError;
+        private readonly string _PortOutOfRangeWarm;
+        private readonly string _PortLower1024Warm;
+        private readonly string _PortEmptyError;
+        private readonly string _IPWrongError;
+        private readonly string _ProtInvaidError;
+        private readonly string _HostDoNotHaveIpError;
         public string HostDoNotHaveIpError => _HostDoNotHaveIpError.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
         public string ProtInvaidError => _ProtInvaidError.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);
         public string IPWrongError => _IPWrongError.Replace("{Ver}", Settings.ver).Replace("{LangVer}", Settings.lang.Version).Replace("{Auther}", "TheColdWorld").Replace("{LangAuther}", Settings.lang.Author);

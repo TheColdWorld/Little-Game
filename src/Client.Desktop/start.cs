@@ -26,8 +26,8 @@ internal class Start
                         default:
                             throw new FatalException("\'" + tmp[0] + "\' setting not found", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
                         case "lang":
-                            Settings.lang = Language.GetLangsName().Contains(tmp[1])
-                                ? new Language(tmp[1])
+                            Settings.langName = Language.GetLangsName().Contains(tmp[1])
+                                ? tmp[1]
                                 : throw new FatalException("Invaid Language", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
                             break;
                         case "mainwindowwidth":
@@ -43,12 +43,15 @@ internal class Start
                             Settings.loginwidth = System.Convert.ToDouble(tmp[1]);
                             break;
                     }
+                    continue;
                 }
-                if (tmp.Length == 1)
+                if (tmp.Length == 1) throw new FatalException("Argument format wrong", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
+                if (tmp.Length == 0)
                 {
                     Debug.Enable = tmp[0].ToLower() == "debug"
                         ? true
                         : throw new FatalException("\'" + tmp[0] + "\' argument not found", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
+                    continue;
                 }
             }
             Settings.lang = new(Settings.langName);

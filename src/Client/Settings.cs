@@ -4,7 +4,7 @@ public static class Settings
 {
     public static Language lang;
     public static string langName;
-    public const string ver ="0.0.0.1";
+    public const string ver ="2.0.0.1";
     public static double loginheight;
     public static double loginwidth;
     public static double mainheight;

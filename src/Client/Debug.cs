@@ -52,8 +52,7 @@ public static class Debug
             };
             _Log.AddLast(Context);
             _WriteFilequeue.AddLast(Context);
-            System.Diagnostics.Debug.WriteLine(Context);
-            if (level == LogLevel.Debug) { if (Enable) System.Console.WriteLine(Context); }
+            if (level == LogLevel.Debug) { if (Enable) System.Console.WriteLine(Context); System.Diagnostics.Debug.WriteLine(Context); }
             else System.Console.WriteLine(Context);
         });
     }
