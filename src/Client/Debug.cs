@@ -39,6 +39,7 @@ public static class Debug
     /// <param name="ThreadName">The Current thread name [use System.Threading.Thread.CurrentThread.Name!]</param>
     public static async System.Threading.Tasks.Task Log(string Message,LogLevel level,System.Type AtClass, string ThreadName)
     {
+        if(string.IsNullOrWhiteSpace(Message)) return;
        await System.Threading.Tasks.Task.Run(() =>
         {
             string Context = level switch

@@ -107,7 +107,7 @@ public static class ServerMain
                 System.Net.Sockets.Socket clientsocket = Socket.InstanceV4.Accept();
                 if (clientsocket is null || !clientsocket.Connected || clientsocket.RemoteEndPoint is null) { i--; continue; }
                 Debug.Log("new connect ip: " + clientsocket.RemoteEndPoint.ToString() + " was created", Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
-                System.Threading.Tasks.Task.Run(() => ClientThread(clientsocket,"V4 -"+ i.ToString()), Settings.TaskCandel.Token);
+                System.Threading.Tasks.Task.Run(() => ClientThread(new(clientsocket),"V4 -"+ i.ToString()), Settings.TaskCandel.Token);
             }
         }), System.Threading.Tasks.Task.Run(() =>
         {
@@ -116,62 +116,18 @@ public static class ServerMain
                 System.Net.Sockets.Socket clientsocket = Socket.InstanceV6.Accept();
                 if (clientsocket is null || !clientsocket.Connected || clientsocket.RemoteEndPoint is null) { i--; continue; }
                 Debug.Log("new connect ip: \'" + clientsocket.RemoteEndPoint.ToString() + "\' was created", Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
-                System.Threading.Tasks.Task.Run(() => ClientThread(clientsocket,"V6 -" +i.ToString()), Settings.TaskCandel.Token);
+                System.Threading.Tasks.Task.Run(() => ClientThread(new(clientsocket),"V6 -" +i.ToString()), Settings.TaskCandel.Token);
             }
         }));
         
     }
-    public static void ClientThread(System.Net.Sockets.Socket clientsocket,string ThreadID)
+    public static void ClientThread(Socket.Client clientsocket,string ThreadID)
     {
         System.Threading.Thread.CurrentThread.Name = "Client thread "+ ThreadID;
-        while (clientsocket.Poll(100,System.Net.Sockets.SelectMode.SelectWrite | System.Net.Sockets.SelectMode.SelectRead))
+        while (clientsocket.CanUse)
         {
-            string message = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(System.Text.Encoding.UTF8.GetString(clientsocket.Receive(System.Net.Sockets.SocketFlags.None))));
-            Debug.Log(message, Debug.LogLevel.Debug, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+            Debug.Log(clientsocket.Receive(), Debug.LogLevel.Debug, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);   
         }
-    }
-    public static byte[] Receive(this System.Net.Sockets.Socket socket,System.Net.Sockets.SocketFlags flag)
-    {
-        if(!socket.Poll(100, System.Net.Sockets.SelectMode.SelectWrite | System.Net.Sockets.SelectMode.SelectRead)) return System.Array.Empty<byte>();
-        byte[] buffer=new byte[2048];
-        int len= socket.Receive(buffer,flag);
-        if (len <= 0)
-        {
-            return System.Array.Empty<byte>();
-        }
-        if (len < 2048)
-        {
-            byte[] ret = new byte[len];
-            try
-            {
-                System.Array.ConstrainedCopy(buffer, 0, ret, 0, len);
-            }
-            catch (System.Exception)
-            {
-                return System.Array.Empty<byte>();
-            }
-            return ret;
-        }
-        else
-        {
-            while (true)
-            {
-                byte[] tmp = new byte[2048];
-                len = socket.Receive(buffer,2048, flag);
-                if (len < 2048)
-                {
-                    byte[] tmp2 = new byte[len];
-                    System.Array.ConstrainedCopy(tmp, 0, tmp2, 0, len);
-                    buffer = buffer.Concat(tmp2).ToArray();
-                    break;
-                }
-                else
-                {
-                    buffer = buffer.Concat(tmp).ToArray();
-                    continue;
-                }
-            }
-            return buffer;
-        }
+        
     }
 }
