@@ -6,6 +6,7 @@ public static class Settings
     public const string ver = "2.0.0.1";
     public static int port;
     public static System.Threading.CancellationTokenSource TaskCandel;
+    public static System.Threading.CancellationTokenSource cmdCandel;
 }
 public class SettingJsonFormat
 {

@@ -4,6 +4,7 @@ public static class Debug
     public static void StopWriteFile()
     {
         WriteTimer.Stop();
+        WriteTimer.Dispose();
         Log("Stopped Log IO", LogLevel.Info, typeof(Debug), System.Threading.Thread.CurrentThread.Name!);
     }
     public static void StartWriteFile()

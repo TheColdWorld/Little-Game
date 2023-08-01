@@ -29,10 +29,11 @@ public class Socket
                 return true;
             }
         }
+        [System.Obsolete("This method is synchronous, please use Socket.Server.ReceiveAsync", false)]
         public string Receive(ulong buffersize = 2048, System.Net.Sockets.SocketFlags flags = System.Net.Sockets.SocketFlags.None)
         {
             string message;
-            if (!CanUse) throw new Client.Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
+            if (!CanUse) throw new Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
             try
             {
                 message = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(System.Text.Encoding.UTF8.GetString(Recbyte(buffersize, flags))));
@@ -59,13 +60,13 @@ public class Socket
             }
 
         }
-        public async System.Threading.Tasks.Task<string> ReceiveAsync(ulong buffersize = 2048, System.Net.Sockets.SocketFlags flags = System.Net.Sockets.SocketFlags.None)
+        public async System.Threading.Tasks.Task<string> ReceiveAsync(System.Threading.CancellationToken candeltoken, ulong buffersize = 2048, System.Net.Sockets.SocketFlags flags = System.Net.Sockets.SocketFlags.None)
         {
             string message;
-            if (!CanUse) throw new Client.Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
+            if (!CanUse) throw new Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
             try
             {
-                message = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(System.Text.Encoding.UTF8.GetString(await RecbyteAsync(buffersize, flags))));
+                message = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(System.Text.Encoding.UTF8.GetString(await RecbyteAsync(buffersize, flags,candeltoken))));
             }
             catch (System.FormatException)
             {
@@ -89,9 +90,10 @@ public class Socket
             }
 
         }
+        [System.Obsolete("This method is synchronous, please use Socket.Server.SendAsync", false)]
         public void Send(string Message)
         {
-            if (!CanUse) throw new Client.Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
+            if (!CanUse) throw new Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
             byte[] sendbyte = System.Text.Encoding.UTF8.GetBytes(System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Message)));
             try
             {
@@ -99,23 +101,23 @@ public class Socket
             }
             catch (System.Net.Sockets.SocketException e)
             {
-                throw new Client.Exception("a " + e.GetType().ToString() + " occored :" + e.Message, GetType(), System.Threading.Thread.CurrentThread.Name!);
+                throw new Exception("a " + e.GetType().ToString() + " occored :" + e.Message, GetType(), System.Threading.Thread.CurrentThread.Name!);
             }
         }
-        public async void SendAsync(string Message)
+        public async System.Threading.Tasks.Task<int> SendAsync(string Message, System.Threading.CancellationToken candeltoken)
         {
-            if (!CanUse) throw new Client.Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
+            if (!CanUse) throw new Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
             byte[] sendbyte = System.Text.Encoding.UTF8.GetBytes(System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Message)));
             try
             {
-                await _Socket.SendAsync(sendbyte);
+                return await _Socket.SendAsync(sendbyte,candeltoken);
             }
             catch (System.Net.Sockets.SocketException e)
             {
-                throw new Client.Exception("a " + e.GetType().ToString() + " occored :" + e.Message, GetType(), System.Threading.Thread.CurrentThread.Name!);
+                throw new Exception("a " + e.GetType().ToString() + " occored :" + e.Message, GetType(), System.Threading.Thread.CurrentThread.Name!);
             }
         }
-
+        [System.Obsolete("This method is synchronous, please use Socket.Server.RecbyteAsync", false)]
         byte[] Recbyte(ulong bufsize, System.Net.Sockets.SocketFlags flag)
         {
             byte[] buffer = new byte[bufsize];
@@ -128,10 +130,10 @@ public class Socket
             }
             return buffer;
         }
-        async System.Threading.Tasks.Task<byte[]> RecbyteAsync(ulong bufsize, System.Net.Sockets.SocketFlags flag)
+        async System.Threading.Tasks.Task<byte[]> RecbyteAsync(ulong bufsize, System.Net.Sockets.SocketFlags flag,System.Threading.CancellationToken candeltoken)
         {
             byte[] buffer = new byte[bufsize];
-            int len = await _Socket.ReceiveAsync(buffer, flag);
+            int len = await _Socket.ReceiveAsync(buffer, flag,candeltoken);
             if (len < 1024)
             {
                 byte[] ret = new byte[len];

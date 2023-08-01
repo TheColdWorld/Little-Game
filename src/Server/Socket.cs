@@ -25,7 +25,7 @@ public class Socket
     {
         public Client(System.Net.Sockets.Socket ClientSocket)
         {
-            _Socket=ClientSocket;
+            _Socket = ClientSocket;
             _History = new();
         }
         public bool CanUse
@@ -33,14 +33,15 @@ public class Socket
             get
             {
                 if (_Socket is null) return false;
-                if (_History.Count == 3){if (_History.All(string.IsNullOrEmpty)) return false;}
+                if (_History.Count == 3) { if (_History.All(string.IsNullOrEmpty)) return false; }
                 return true;
             }
         }
-        public string Receive(ulong buffersize=2048,System.Net.Sockets.SocketFlags flags = System.Net.Sockets.SocketFlags.None)
+        [System.Obsolete("This method is synchronous, please use Socket.Server.ReceiveAsync", false)]
+        public string Receive(ulong buffersize = 2048, System.Net.Sockets.SocketFlags flags = System.Net.Sockets.SocketFlags.None)
         {
             string message;
-            if (!CanUse) throw new Server.Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
+            if (!CanUse) throw new Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
             try
             {
                 message = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(System.Text.Encoding.UTF8.GetString(Recbyte(buffersize, flags))));
@@ -52,7 +53,7 @@ public class Socket
             switch (_History.Count)
             {
                 case 0:
-                    _History.AddLast(message); 
+                    _History.AddLast(message);
                     return message;
                 case 1:
                     _History.AddLast(message);
@@ -65,15 +66,15 @@ public class Socket
                     _History.RemoveFirst();
                     return message;
             }
-            
+
         }
-        public async System.Threading.Tasks.Task<string> ReceiveAsync(ulong buffersize = 2048, System.Net.Sockets.SocketFlags flags = System.Net.Sockets.SocketFlags.None)
+        public async System.Threading.Tasks.Task<string> ReceiveAsync(System.Threading.CancellationToken candeltoken, ulong buffersize = 2048, System.Net.Sockets.SocketFlags flags = System.Net.Sockets.SocketFlags.None)
         {
             string message;
-            if (!CanUse) throw new Server.Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
+            if (!CanUse) throw new Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
             try
             {
-                message = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(System.Text.Encoding.UTF8.GetString(await RecbyteAsync(buffersize, flags))));
+                message = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(System.Text.Encoding.UTF8.GetString(await RecbyteAsync(buffersize, flags, candeltoken))));
             }
             catch (System.FormatException)
             {
@@ -97,9 +98,10 @@ public class Socket
             }
 
         }
+        [System.Obsolete("This method is synchronous, please use Socket.Server.SendAsync", false)]
         public void Send(string Message)
         {
-            if (!CanUse) throw new Server.Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
+            if (!CanUse) throw new Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
             byte[] sendbyte = System.Text.Encoding.UTF8.GetBytes(System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Message)));
             try
             {
@@ -107,23 +109,23 @@ public class Socket
             }
             catch (System.Net.Sockets.SocketException e)
             {
-                throw new Server.Exception("a " + e.GetType().ToString() + " occored :" + e.Message, GetType(), System.Threading.Thread.CurrentThread.Name!);
+                throw new Exception("a " + e.GetType().ToString() + " occored :" + e.Message, GetType(), System.Threading.Thread.CurrentThread.Name!);
             }
         }
-        public async void SendAsync(string Message)
+        public async System.Threading.Tasks.Task<int> SendAsync(string Message, System.Threading.CancellationToken candeltoken)
         {
-            if (!CanUse) throw new Server.Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
+            if (!CanUse) throw new Exception("Invaid Client", GetType(), System.Threading.Thread.CurrentThread.Name!);
             byte[] sendbyte = System.Text.Encoding.UTF8.GetBytes(System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Message)));
             try
             {
-                await _Socket.SendAsync(sendbyte);
+                return await _Socket.SendAsync(sendbyte, candeltoken);
             }
             catch (System.Net.Sockets.SocketException e)
             {
-                throw new Server.Exception("a " + e.GetType().ToString() + " occored :" + e.Message, GetType(), System.Threading.Thread.CurrentThread.Name!);
+                throw new Exception("a " + e.GetType().ToString() + " occored :" + e.Message, GetType(), System.Threading.Thread.CurrentThread.Name!);
             }
         }
-
+        [System.Obsolete("This method is synchronous, please use Socket.Server.RecbyteAsync", false)]
         byte[] Recbyte(ulong bufsize, System.Net.Sockets.SocketFlags flag)
         {
             byte[] buffer = new byte[bufsize];
@@ -136,10 +138,10 @@ public class Socket
             }
             return buffer;
         }
-        async System.Threading.Tasks.Task<byte[]> RecbyteAsync(ulong bufsize, System.Net.Sockets.SocketFlags flag)
+        async System.Threading.Tasks.Task<byte[]> RecbyteAsync(ulong bufsize, System.Net.Sockets.SocketFlags flag, System.Threading.CancellationToken candeltoken)
         {
             byte[] buffer = new byte[bufsize];
-            int len =await _Socket.ReceiveAsync(buffer, flag);
+            int len = await _Socket.ReceiveAsync(buffer, flag, candeltoken);
             if (len < 1024)
             {
                 byte[] ret = new byte[len];

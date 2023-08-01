@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Server;
 class Start
@@ -16,7 +17,8 @@ class Start
                 string[] tmp = arg.Split('=', System.StringSplitOptions.RemoveEmptyEntries);
                 if (tmp.Length == 1)
                 {
-                    if(arg == "debug") {
+                    if (arg == "debug")
+                    {
                         Debug.Enable = tmp[0].ToLower() == "debug"
                         ? true
                         : throw new FatalException("\'" + tmp[0] + "\' argument not found", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
@@ -48,7 +50,7 @@ class Start
             Settings.Language = new(Settings.LangName);
             System.GC.Collect();
             Settings.TaskCandel = new();
-            Settings.TaskCandel.Token.Register(() => Debug.Log("Thread " + System.Environment.CurrentManagedThreadId.ToString() + " killed", Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!));
+            Settings.TaskCandel.Token.Register(() => Debug.Log(Settings.Language.KillThread, Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!));
             Debug.Log(Settings.Language.StartServer, Debug.LogLevel.Info, typeof(Start), System.Threading.Thread.CurrentThread.Name);
             ServerMain.Run();
         }
@@ -66,20 +68,24 @@ class Start
         //}
         finally
         {
-            Settings.TaskCandel.Cancel();
-            Socket.InstanceV4.Close(); Socket.InstanceV6.Close();
-            Debug.Log("Application closed", Debug.LogLevel.Info, typeof(Start), System.Threading.Thread.CurrentThread.Name!);
-            Debug.StopWriteFile();
-            Debug.WriteTimer.Dispose();
-            Debug.LogWrite();
-#if DEBUG
-            System.Console.ReadKey(true);
-#endif
-            System.Environment.Exit(0);
+            ExitApplication(0);
         }
         
     }
-
+    public static void ExitApplication(int returncode = 0)
+    {
+        if (System.Threading.Thread.CurrentThread.Name != "Command Thread") Settings.cmdCandel.Cancel();
+        Settings.TaskCandel.Cancel();
+        if (Socket.InstanceV6.IsBound) Socket.InstanceV6.Close();
+        if (Socket.InstanceV4.IsBound) Socket.InstanceV4.Close(); 
+        Debug.Log("Application closed", Debug.LogLevel.Info, typeof(Start), System.Threading.Thread.CurrentThread.Name!).GetAwaiter().GetResult();
+        Debug.StopWriteFile();
+        Debug.LogWrite();
+#if DEBUG
+        System.Console.ReadKey(true);
+#endif
+        System.Environment.Exit(0);
+    }
     static void ReadSettings()
     {
         string fp = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "Settings.json");
@@ -100,25 +106,28 @@ public static class ServerMain
         Socket.InstanceV4.Listen(Settings.port);
         Socket.InstanceV6.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.IPv6Any, Settings.port));
         Socket.InstanceV6.Listen(Settings.port);
-        System.Threading.Tasks.Task.WaitAll(System.Threading.Tasks.Task.Run(() =>
+        Settings.cmdCandel = new();
+        Settings.cmdCandel.Token.Register(() => Debug.Log(Settings.Language.KillThread, Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!));
+        System.Threading.Tasks.Task.WaitAll(System.Threading.Tasks.Task.Run(async () =>
         {
             for (long i = 1; ; i++)
             {
-                System.Net.Sockets.Socket clientsocket = Socket.InstanceV4.Accept();
+                System.Net.Sockets.Socket clientsocket =await Socket.InstanceV4.AcceptAsync(Settings.TaskCandel.Token);
                 if (clientsocket is null || !clientsocket.Connected || clientsocket.RemoteEndPoint is null) { i--; continue; }
                 Debug.Log("new connect ip: " + clientsocket.RemoteEndPoint.ToString() + " was created", Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
-                System.Threading.Tasks.Task.Run(() => ClientThread(new(clientsocket),"V4 -"+ i.ToString()), Settings.TaskCandel.Token);
+                System.Threading.Tasks.Task.Run(() => ClientThread(new(clientsocket), "V4 -" + i.ToString()), Settings.TaskCandel.Token);
             }
-        }), System.Threading.Tasks.Task.Run(() =>
+        }), System.Threading.Tasks.Task.Run(async () =>
         {
             for (long i = 1; ; i++)
             {
-                System.Net.Sockets.Socket clientsocket = Socket.InstanceV6.Accept();
+                System.Net.Sockets.Socket clientsocket = await Socket.InstanceV6.AcceptAsync(Settings.TaskCandel.Token);
                 if (clientsocket is null || !clientsocket.Connected || clientsocket.RemoteEndPoint is null) { i--; continue; }
                 Debug.Log("new connect ip: \'" + clientsocket.RemoteEndPoint.ToString() + "\' was created", Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
-                System.Threading.Tasks.Task.Run(() => ClientThread(new(clientsocket),"V6 -" +i.ToString()), Settings.TaskCandel.Token);
+                System.Threading.Tasks.Task.Run(() => ClientThread(new(clientsocket), "V6 -" + i.ToString()), Settings.TaskCandel.Token);
             }
-        }));
+        }), System.Threading.Tasks.Task.Run(CommandThread,Settings.cmdCandel.Token)
+        );
         
     }
     public static void ClientThread(Socket.Client clientsocket,string ThreadID)
@@ -129,5 +138,42 @@ public static class ServerMain
             Debug.Log(clientsocket.Receive(), Debug.LogLevel.Debug, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);   
         }
         
+    }
+    public static void CommandThread()
+    {
+        System.Threading.Thread.CurrentThread.Name = "Command Thread";
+        while (true)
+        {
+            string? Command = System.Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(Command)) continue;
+            Command = Command.Trim();
+            string[] commands=Command.Split(' ',System.StringSplitOptions.RemoveEmptyEntries);
+            if (commands.Length == 0) continue;
+            switch (commands[0]) 
+            { 
+                case "exit":
+                    Start.ExitApplication(0);
+                    break;
+                case "stop":
+                    Start.ExitApplication(0);
+                    break;
+                case "help":
+                    if(commands.Length == 1 )
+                    {
+                        Commands.Help(1);
+                        continue;
+                    }
+                    if(!int.TryParse(commands[1], out int page))
+                    {
+                        Debug.Log(Settings.Language.Help_ArgWrong._Format(commands[1],"help"), Debug.LogLevel.Error, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+                        continue;
+                    }
+                    Commands.Help(page);
+                    break;
+                default:
+                    Debug.Log(Settings.Language.WrongCommand._Format(commands[0]), Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+                    break;
+            }
+        }
     }
 }
