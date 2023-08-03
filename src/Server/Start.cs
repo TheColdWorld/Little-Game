@@ -101,43 +101,58 @@ public static class ServerMain
 {
     public static void Run()
     {
-        Socket.InstanceV4.NoDelay = false; Socket.InstanceV6.NoDelay = false;
-        Socket.InstanceV4.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Any, Settings.port));
-        Socket.InstanceV4.Listen(Settings.port);
-        Socket.InstanceV6.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.IPv6Any, Settings.port));
-        Socket.InstanceV6.Listen(Settings.port);
+        if (System.Net.Sockets.Socket.OSSupportsIPv4)
+        {
+            Socket.InstanceV4.NoDelay = false;
+            Socket.InstanceV4.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Any, Settings.port));
+            Socket.InstanceV4.Listen(Settings.port);
+        }
+        else
+        {
+
+        }
+        if (System.Net.Sockets.Socket.OSSupportsIPv6)
+        {
+            Socket.InstanceV6.NoDelay = false;
+            Socket.InstanceV6.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.IPv6Any, Settings.port));
+            Socket.InstanceV6.Listen(Settings.port);
+        }
+        else
+        {
+
+        }
         Settings.cmdCandel = new();
         Settings.cmdCandel.Token.Register(() => Debug.Log(Settings.Language.KillThread, Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!));
         System.Threading.Tasks.Task.WaitAll(System.Threading.Tasks.Task.Run(async () =>
         {
-            for (long i = 1; ; i++)
+            for (long i = 1;System.Net.Sockets.Socket.OSSupportsIPv4 ; i++)
             {
+                
                 System.Net.Sockets.Socket clientsocket =await Socket.InstanceV4.AcceptAsync(Settings.TaskCandel.Token);
                 if (clientsocket is null || !clientsocket.Connected || clientsocket.RemoteEndPoint is null) { i--; continue; }
-                Debug.Log("new connect ip: " + clientsocket.RemoteEndPoint.ToString() + " was created", Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
-                System.Threading.Tasks.Task.Run(() => ClientThread(new(clientsocket), "V4 -" + i.ToString()), Settings.TaskCandel.Token);
+                Debug.Log(Settings.Language.Connect._Format(clientsocket.RemoteEndPoint), Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+                System.Threading.Tasks.Task.Run(() => ClientThread(new(clientsocket, Settings.TaskCandel.Token), "IPv4 -" + i.ToString()), Settings.TaskCandel.Token);
             }
         }), System.Threading.Tasks.Task.Run(async () =>
         {
-            for (long i = 1; ; i++)
+            for (long i = 1; System.Net.Sockets.Socket.OSSupportsIPv6; i++)
             {
                 System.Net.Sockets.Socket clientsocket = await Socket.InstanceV6.AcceptAsync(Settings.TaskCandel.Token);
                 if (clientsocket is null || !clientsocket.Connected || clientsocket.RemoteEndPoint is null) { i--; continue; }
-                Debug.Log("new connect ip: \'" + clientsocket.RemoteEndPoint.ToString() + "\' was created", Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
-                System.Threading.Tasks.Task.Run(() => ClientThread(new(clientsocket), "V6 -" + i.ToString()), Settings.TaskCandel.Token);
+                Debug.Log(Settings.Language.Connect._Format(clientsocket.RemoteEndPoint), Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+                System.Threading.Tasks.Task.Run(() => ClientThread(new(clientsocket, Settings.TaskCandel.Token), "IPv6 -" + i.ToString()), Settings.TaskCandel.Token);
             }
         }), System.Threading.Tasks.Task.Run(CommandThread,Settings.cmdCandel.Token)
         );
         
     }
-    public static void ClientThread(Socket.Client clientsocket,string ThreadID)
+    public async static void ClientThread(Client client,string ThreadID)
     {
         System.Threading.Thread.CurrentThread.Name = "Client thread "+ ThreadID;
-        while (clientsocket.CanUse)
+        while (client.SocketInstance.SocketAvailable)
         {
-            Debug.Log(clientsocket.Receive(), Debug.LogLevel.Debug, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);   
+            Debug.Log(await client.Receive(), Debug.LogLevel.Debug, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);   
         }
-        
     }
     public static void CommandThread()
     {
