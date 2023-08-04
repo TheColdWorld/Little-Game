@@ -3,10 +3,11 @@
 namespace Server;
 public class Client :System.IDisposable
 {
-    public Client(System.Net.Sockets.Socket ClientSocket,System.Threading.CancellationToken candeltoken)
+    public Client(System.Net.Sockets.Socket ClientSocket,System.Threading.CancellationToken candeltoken,string ID,int tmpbuffersize=2048)
     {
         _SocketCancellationTokenSource= System.Threading.CancellationTokenSource.CreateLinkedTokenSource(candeltoken);
-        _socketInstacne = new(ClientSocket, _SocketCancellationTokenSource.Token);
+        _socketInstacne = new(ClientSocket, _SocketCancellationTokenSource.Token,tmpbuffersize);
+        _ID = ID;
     }
     ~Client()
     {
@@ -22,6 +23,7 @@ public class Client :System.IDisposable
 
     public bool Disposed => _Disposed;
     public Socket SocketInstance => _socketInstacne;
+    public string ID => _ID;
 
     public async void Send(string Message, System.Net.Sockets.SocketFlags flags=System.Net.Sockets.SocketFlags.None)
     {
@@ -117,6 +119,7 @@ public class Client :System.IDisposable
     System.Threading.CancellationTokenSource _SocketCancellationTokenSource;
     bool _Disposed = false;
     private Socket _socketInstacne;
+    private readonly string _ID;
 
     public class Socket : System.IDisposable
     {

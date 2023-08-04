@@ -27,6 +27,7 @@ public static class Debug
         fs.Write(System.Text.Encoding.UTF8.GetBytes(context));
         fs.Close();
         fs.Dispose();
+        Settings.ClearInvaidClientInstance();
         System.GC.Collect();
     }
     /// <summary>

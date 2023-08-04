@@ -19,6 +19,20 @@ public static class Commands
             Debug.Log(Settings.Language.Help_OutOfRange._Format(page,Settings.Language.Helps.Length), Debug.LogLevel.Error, typeof(Commands), System.Threading.Thread.CurrentThread.Name!);
         }
     }
+    public static void PrintProcessMemoury()
+    {
+        System.Diagnostics.Process proc = System.Diagnostics.Process.GetCurrentProcess();
+        proc.Refresh();
+        Debug.Log(Settings.Language.ProcessMemory._Format(proc),Debug.LogLevel.Info,typeof(Commands),System.Threading.Thread.CurrentThread.Name!);
+    }
+    public static void PrintClients()
+    {
+        Debug.Log("ClientID\tClientAddress",Debug.LogLevel.Info,typeof(Commands),System.Threading.Thread.CurrentThread.Name!);
+        foreach (Client c in Settings.Clients)
+        {
+            Debug.Log(string.Format("{0}\t{1}",c.ID,c.SocketInstance.SocketInstance.RemoteEndPoint), Debug.LogLevel.Info, typeof(Commands), System.Threading.Thread.CurrentThread.Name!);
+        }
+    }
 }
 public class HelpPages
 {

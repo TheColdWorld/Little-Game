@@ -92,8 +92,9 @@ class Start
         Debug.Log("Start load config from " + fp, Debug.LogLevel.Info, typeof(Start), System.Threading.Thread.CurrentThread.Name!);
         SettingJsonFormat jsonf = System.Text.Json.JsonSerializer.Deserialize<SettingJsonFormat>(System.IO.File.ReadAllText(fp))!;
         if (jsonf.LangName is null || jsonf.port is null) throw new FatalException("Invaid Settings", typeof(Start), System.Threading.Thread.CurrentThread.Name!);
-        Settings.port = (int)jsonf.port;
+        Settings.port = jsonf.port is null ? 25565 : (int)jsonf.port;
         Settings.LangName = jsonf.LangName;
+        Settings.Tmpbuffersize = jsonf.TmpBufferSize is null ? 2048 : (int)jsonf.TmpBufferSize ;
     }
     
 }
@@ -101,26 +102,38 @@ public static class ServerMain
 {
     public static void Run()
     {
+        System.Threading.Tasks.Task taskv4, taskv6;
         if (System.Net.Sockets.Socket.OSSupportsIPv4)
         {
-            Socket.InstanceV4.NoDelay = false;
-            Socket.InstanceV4.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Any, Settings.port));
-            Socket.InstanceV4.Listen(Settings.port);
+            taskv4 = System.Threading.Tasks.Task.Run(() => {
+                Socket.InstanceV4.NoDelay = false;
+                Socket.InstanceV4.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Any, Settings.port));
+                Socket.InstanceV4.Listen(Settings.port);
+                Debug.Log(Settings.Language.OpenListen._Format(Socket.InstanceV4.LocalEndPoint!), Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+            });
         }
         else
         {
-
+            Debug.Log(Settings.Language.OSNotSupportsIPv4, Debug.LogLevel.Warm, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+            taskv4 = System.Threading.Tasks.Task.CompletedTask;
         }
         if (System.Net.Sockets.Socket.OSSupportsIPv6)
         {
-            Socket.InstanceV6.NoDelay = false;
-            Socket.InstanceV6.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.IPv6Any, Settings.port));
-            Socket.InstanceV6.Listen(Settings.port);
+            taskv6 = System.Threading.Tasks.Task.Run(() =>
+            {
+                Socket.InstanceV6.NoDelay = false;
+                Socket.InstanceV6.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.IPv6Any, Settings.port));
+                Socket.InstanceV6.Listen(Settings.port);
+                Debug.Log(Settings.Language.OpenListen._Format(Socket.InstanceV6.LocalEndPoint!), Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+            });
         }
         else
         {
-
+            Debug.Log(Settings.Language.OSNotSupportsIPv6, Debug.LogLevel.Warm, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+            taskv6 = System.Threading.Tasks.Task.CompletedTask;
         }
+        Settings.Clients = new();
+        System.Threading.Tasks.Task.WaitAll(taskv4, taskv6);
         Settings.cmdCandel = new();
         Settings.cmdCandel.Token.Register(() => Debug.Log(Settings.Language.KillThread, Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!));
         System.Threading.Tasks.Task.WaitAll(System.Threading.Tasks.Task.Run(async () =>
@@ -131,7 +144,10 @@ public static class ServerMain
                 System.Net.Sockets.Socket clientsocket =await Socket.InstanceV4.AcceptAsync(Settings.TaskCandel.Token);
                 if (clientsocket is null || !clientsocket.Connected || clientsocket.RemoteEndPoint is null) { i--; continue; }
                 Debug.Log(Settings.Language.Connect._Format(clientsocket.RemoteEndPoint), Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
-                System.Threading.Tasks.Task.Run(() => ClientThread(new(clientsocket, Settings.TaskCandel.Token), "IPv4 -" + i.ToString()), Settings.TaskCandel.Token);
+                Client client = new(clientsocket, Settings.TaskCandel.Token, "IPv4 -" + i.ToString());
+                Settings.Clients.AddLast(client);
+                System.Threading.Tasks.Task.Run(() => ClientThread(client), Settings.TaskCandel.Token);
+                System.Threading.Thread.Sleep(0);
             }
         }), System.Threading.Tasks.Task.Run(async () =>
         {
@@ -140,18 +156,23 @@ public static class ServerMain
                 System.Net.Sockets.Socket clientsocket = await Socket.InstanceV6.AcceptAsync(Settings.TaskCandel.Token);
                 if (clientsocket is null || !clientsocket.Connected || clientsocket.RemoteEndPoint is null) { i--; continue; }
                 Debug.Log(Settings.Language.Connect._Format(clientsocket.RemoteEndPoint), Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
-                System.Threading.Tasks.Task.Run(() => ClientThread(new(clientsocket, Settings.TaskCandel.Token), "IPv6 -" + i.ToString()), Settings.TaskCandel.Token);
+                Client client = new(clientsocket, Settings.TaskCandel.Token, "IPv6 -" + i.ToString());
+                Settings.Clients.AddLast(client);
+                System.Threading.Tasks.Task.Run(() => ClientThread(client ), Settings.TaskCandel.Token);
+                System.Threading.Thread.Sleep(0);
+
             }
         }), System.Threading.Tasks.Task.Run(CommandThread,Settings.cmdCandel.Token)
         );
         
     }
-    public async static void ClientThread(Client client,string ThreadID)
+    public async static void ClientThread(Client client)
     {
-        System.Threading.Thread.CurrentThread.Name = "Client thread "+ ThreadID;
+        System.Threading.Thread.CurrentThread.Name = "Client thread "+ client.ID;
         while (client.SocketInstance.SocketAvailable)
         {
-            Debug.Log(await client.Receive(), Debug.LogLevel.Debug, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);   
+            Debug.Log(await client.Receive(), Debug.LogLevel.Debug, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+            System.Threading.Thread.Sleep(0);
         }
     }
     public static void CommandThread()
@@ -184,6 +205,16 @@ public static class ServerMain
                         continue;
                     }
                     Commands.Help(page);
+                    break;
+                case "log":
+                    Debug.LogWrite();
+                    Debug.Log(Settings.Language.ForceLogWrite, Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+                    break;
+                case "memory":
+                    Commands.PrintProcessMemoury();
+                    break;
+                case "clients":
+                    Commands.PrintClients();
                     break;
                 default:
                     Debug.Log(Settings.Language.WrongCommand._Format(commands[0]), Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);

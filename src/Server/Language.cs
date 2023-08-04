@@ -20,6 +20,9 @@ public class Language
         _OSNotSupportsIPv4 = jsonf.OSNotSupportsIPv4;
         _OSNotSupportsIPv6= jsonf.OSNotSupportsIPv6;
         _Connect= jsonf.Connect;
+        _OpenListen = jsonf.OpenListen;
+        _ForceLogWrite = jsonf.ForceLogWrite;
+        _ProcessMemory=jsonf.ProcessMemory;
     }
     public class _SocketErrer
     {
@@ -71,6 +74,12 @@ public class Language
     private readonly string _OSNotSupportsIPv4;
     private readonly string _OSNotSupportsIPv6;
     private readonly string _Connect;
+    private readonly string _OpenListen;
+    private readonly string _ForceLogWrite;
+    private readonly string _ProcessMemory;
+    public string ProcessMemory => _ProcessMemory;
+    public string ForceLogWrite => _ForceLogWrite;
+    public string OpenListen => _OpenListen;
     public string Connect => _Connect;
     public string OSNotSupportsIPv4 => _OSNotSupportsIPv4;
     public string OSNotSupportsIPv6 => _OSNotSupportsIPv6;
@@ -101,6 +110,9 @@ public class LanguageJsonFormat
     public string Help_Head { get; set; }
     public string Help_ArgWrong { get; set; }
     public string Connect { get;set; }
+    public string OpenListen { get; set; }
+    public string ForceLogWrite { get; set; }
+    public string ProcessMemory { get;set; }
     [System.Text.Json.Serialization.JsonPropertyName("SocketErrer")]
     public SocketErrer socketErrer { get; set; }
     public class SocketErrer
@@ -122,4 +134,5 @@ public static class LangReplace
     public static string _Format(this string i, string cmd) => i.Replace("{cmd}", cmd);
     public static string _Format(this string i, string Arg,string from) => i.Replace("{Arg}", Arg).Replace("{From}",from);
     public static string _Format(this string i, System.Net.EndPoint ipe) => i.Replace("{IP}", ipe.ToString());
+    public static string _Format(this string i, System.Diagnostics.Process proc) => i.Replace("{mem}", (proc.WorkingSet64 /1024).ToString());
 }
