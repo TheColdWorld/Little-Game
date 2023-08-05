@@ -7,7 +7,7 @@ public static class Commands
     {
         try
         {
-            string[] strings = Settings.Language.Helps[page-1];
+            string[] strings = Settings.Language.Helps[page - 1];
             Debug.Log(Settings.Language.Help_Head._Format(page, Settings.Language.Helps.Length), Debug.LogLevel.Info, typeof(Commands), System.Threading.Thread.CurrentThread.Name!);
             foreach (string s in strings)
             {
@@ -16,14 +16,30 @@ public static class Commands
         }
         catch (System.IndexOutOfRangeException)
         {
-            Debug.Log(Settings.Language.Help_OutOfRange._Format(page,Settings.Language.Helps.Length), Debug.LogLevel.Error, typeof(Commands), System.Threading.Thread.CurrentThread.Name!);
+            Debug.Log(Settings.Language.Help_OutOfRange._Format(page, Settings.Language.Helps.Length), Debug.LogLevel.Error, typeof(Commands), System.Threading.Thread.CurrentThread.Name!);
         }
     }
-    public static void PrintProcessMemoury()
+    public static void HelpCommand(string command)
+    {
+        switch (command.ToLower())
+        {
+            case "memory":
+                foreach (string s in Settings.Language.Help_memory)
+                {
+                    Debug.Log(s, Debug.LogLevel.Info, typeof(Commands), System.Threading.Thread.CurrentThread.Name!);
+                }
+                System.Console.WriteLine();
+                return;
+            default:
+                Debug.Log(Settings.Language.HelpCommandNotFound._Format(command), Debug.LogLevel.Error, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+                return;
+        }
+    }
+    public static void PrintProcessMemoury(string type)
     {
         System.Diagnostics.Process proc = System.Diagnostics.Process.GetCurrentProcess();
         proc.Refresh();
-        Debug.Log(Settings.Language.ProcessMemory._Format(proc),Debug.LogLevel.Info,typeof(Commands),System.Threading.Thread.CurrentThread.Name!);
+        Debug.Log(Settings.Language.ProcessMemory._Format(proc,type),Debug.LogLevel.Info,typeof(Commands),System.Threading.Thread.CurrentThread.Name!);
     }
     public static void PrintClients()
     {

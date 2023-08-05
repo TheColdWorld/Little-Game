@@ -201,7 +201,7 @@ public static class ServerMain
                     }
                     if(!int.TryParse(commands[1], out int page))
                     {
-                        Debug.Log(Settings.Language.Help_ArgWrong._Format(commands[1],"help"), Debug.LogLevel.Error, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
+                        Commands.HelpCommand(commands[1]);
                         continue;
                     }
                     Commands.Help(page);
@@ -211,7 +211,8 @@ public static class ServerMain
                     Debug.Log(Settings.Language.ForceLogWrite, Debug.LogLevel.Info, typeof(ServerMain), System.Threading.Thread.CurrentThread.Name!);
                     break;
                 case "memory":
-                    Commands.PrintProcessMemoury();
+                    if (commands.Length == 1) Commands.PrintProcessMemoury(string.Empty);
+                    else Commands.PrintProcessMemoury(commands[1]);
                     break;
                 case "clients":
                     Commands.PrintClients();

@@ -15,7 +15,6 @@ public class Language
         _Helps = new(jsonf);
         _Help_OutOfRange = jsonf.Help_OutOfRange;
         _Help_Head=jsonf.Help_Head;
-        _Help_ArgWrong= jsonf.Help_ArgWrong;
         __SocketErrer = new(jsonf);
         _OSNotSupportsIPv4 = jsonf.OSNotSupportsIPv4;
         _OSNotSupportsIPv6= jsonf.OSNotSupportsIPv6;
@@ -23,6 +22,8 @@ public class Language
         _OpenListen = jsonf.OpenListen;
         _ForceLogWrite = jsonf.ForceLogWrite;
         _ProcessMemory=jsonf.ProcessMemory;
+        _Help_memory=jsonf.Help_memory;
+        _HelpCommandNotFound= jsonf.HelpCommandNotFound;
     }
     public class _SocketErrer
     {
@@ -69,7 +70,6 @@ public class Language
     private readonly HelpPages _Helps;
     private readonly string _Help_OutOfRange;
     private readonly string _Help_Head;
-    private readonly string _Help_ArgWrong;
     private readonly _SocketErrer __SocketErrer;
     private readonly string _OSNotSupportsIPv4;
     private readonly string _OSNotSupportsIPv6;
@@ -77,6 +77,10 @@ public class Language
     private readonly string _OpenListen;
     private readonly string _ForceLogWrite;
     private readonly string _ProcessMemory;
+    private readonly string[] _Help_memory;
+    private readonly string _HelpCommandNotFound;
+    public string HelpCommandNotFound => _HelpCommandNotFound;
+    public string[] Help_memory => _Help_memory;
     public string ProcessMemory => _ProcessMemory;
     public string ForceLogWrite => _ForceLogWrite;
     public string OpenListen => _OpenListen;
@@ -84,7 +88,6 @@ public class Language
     public string OSNotSupportsIPv4 => _OSNotSupportsIPv4;
     public string OSNotSupportsIPv6 => _OSNotSupportsIPv6;
     public _SocketErrer SocketErrer => __SocketErrer;
-    public string Help_ArgWrong => _Help_ArgWrong;
     public string Help_Head => _Help_Head;
     public string Help_OutOfRange => _Help_OutOfRange;
     public HelpPages Helps => _Helps;
@@ -108,11 +111,12 @@ public class LanguageJsonFormat
     public string[] Helps { get; set; }
     public string Help_OutOfRange { get;set; }
     public string Help_Head { get; set; }
-    public string Help_ArgWrong { get; set; }
     public string Connect { get;set; }
     public string OpenListen { get; set; }
     public string ForceLogWrite { get; set; }
     public string ProcessMemory { get;set; }
+    public string[] Help_memory { get;set; }
+    public string HelpCommandNotFound { get; set; }
     [System.Text.Json.Serialization.JsonPropertyName("SocketErrer")]
     public SocketErrer socketErrer { get; set; }
     public class SocketErrer
@@ -134,5 +138,20 @@ public static class LangReplace
     public static string _Format(this string i, string cmd) => i.Replace("{cmd}", cmd);
     public static string _Format(this string i, string Arg,string from) => i.Replace("{Arg}", Arg).Replace("{From}",from);
     public static string _Format(this string i, System.Net.EndPoint ipe) => i.Replace("{IP}", ipe.ToString());
-    public static string _Format(this string i, System.Diagnostics.Process proc) => i.Replace("{mem}", (proc.WorkingSet64 /1024).ToString());
+    public static string _Format(this string i, System.Diagnostics.Process proc, string type) => i.Replace("{mem}", type.ToLower() switch
+    {
+        "working" => (proc.WorkingSet64 / 1024).ToString(),
+        "peakworking" => (proc.PeakWorkingSet64 / 1024).ToString(),
+        "minworking" => (proc.MinWorkingSet / 1024).ToString(),
+        "maxworking" => (proc.MaxWorkingSet / 1024).ToString(),
+        "peakvirtual" => (proc.PeakVirtualMemorySize64 / 1024).ToString(),
+        "virtual" => (proc.VirtualMemorySize64 / 1024).ToString(),
+        "pagedsystem" => (proc.PagedSystemMemorySize64 / 1024).ToString(),
+        "nonpagedsystem" => (proc.NonpagedSystemMemorySize64 / 1024).ToString(),
+        "private" => (proc.PrivateMemorySize64 / 1024).ToString(),
+        "peakpaged" => (proc.PeakPagedMemorySize64 / 1024).ToString(),
+        "paged" => (proc.PagedMemorySize64 / 1024).ToString(),
+        _ => (proc.WorkingSet64/1024).ToString()
+    }
+        ).Replace("{type}", type);
 }
